@@ -1727,7 +1727,7 @@ function AstralLib:Window(Settings)
 					local toggle1 = Instance.new("ImageButton")
 					toggle1.Name = "Toggle"
 					toggle1.Image = assets.toggleBackground
-					toggle1.ImageColor3 = Color3.fromRGB(87, 86, 86)
+					toggle1.ImageColor3 = ToggleFunctions.Settings.DisabledColor or Color3.fromRGB(87, 86, 86)
 					toggle1.AutoButtonColor = false
 					toggle1.AnchorPoint = Vector2.new(1, 0.5)
 					toggle1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -1779,9 +1779,12 @@ function AstralLib:Window(Settings)
 						local transparencyValues = State and {toggle1Transparency.Enabled, togglerHeadTransparency.Enabled}
 							or {toggle1Transparency.Disabled, togglerHeadTransparency.Disabled}
 						local position = State and TweenSettings.EnabledPosition or TweenSettings.DisabledPosition
+						local color = State and (ToggleFunctions.Settings.EnabledColor or Color3.fromRGB(87, 86, 86))
+							or (ToggleFunctions.Settings.DisabledColor or Color3.fromRGB(87, 86, 86))
 
 						Tween(toggle1, TweenSettings.Info, {
-							ImageTransparency = transparencyValues[1]
+							ImageTransparency = transparencyValues[1],
+							ImageColor3 = color
 						}):Play()
 
 						Tween(togglerHead, TweenSettings.Info, {

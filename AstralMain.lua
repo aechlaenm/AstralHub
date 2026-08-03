@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
-local Plots = workspace:WaitForChild("Plots")
+local CharacterAdditional = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("CharacterAdditional"))
 
 local AstralLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/aechlaenm/AstralHub/refs/heads/main/Libraries/AstralLib.lua"))()
 
@@ -27,24 +28,12 @@ local autoRoll = false
 local autoRollRunning = false
 local unloaded = false
 
-local function getPlayerPlot()
-	for _, plot in ipairs(Plots:GetChildren()) do
-		local configuration = plot:FindFirstChild("Configuration")
-		local owner = configuration and configuration:FindFirstChild("Owner")
-		local value = owner and owner:IsA("ValueBase") and owner.Value
-
-		if value == LocalPlayer or value == LocalPlayer.Name or tostring(value) == tostring(LocalPlayer.UserId) then
-			return plot
-		end
-	end
-end
-
 local function resolvePlayerPlot()
 	if PlayerPlot and PlayerPlot.Parent and RollPrompt and RollPrompt.Parent then
 		return true
 	end
 
-	local plot = getPlayerPlot()
+	local plot = CharacterAdditional.GetPlayerBase(LocalPlayer)
 	local characters = plot and plot:FindFirstChild("Characters")
 	local prompt = plot and plot:FindFirstChild("RollPrompt", true)
 	if not (characters and prompt and prompt:IsA("ProximityPrompt")) then
@@ -98,7 +87,7 @@ AutoRollToggle = AutoSection:Toggle({
 }, "AutoRoll")
 AutoSection:SubLabel({ Text = "New roll results print to the console." })
 
--- ponytail: six-plot startup scan; use owner-change events only if the plot count grows.
+-- Retry only until the game's shared helper reports the assigned plot.
 task.spawn(function()
 	while not unloaded and not resolvePlayerPlot() do
 		task.wait(1)

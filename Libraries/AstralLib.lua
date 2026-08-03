@@ -110,6 +110,7 @@ function AstralLib:Window(Settings)
 	base.BackgroundTransparency = Settings.AcrylicBlur and 0.05 or 0
 	base.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	base.BorderSizePixel = 0
+	base.Active = Settings.DragStyle == 2 or Settings.Resizable == true
 	base.Position = UDim2.fromScale(0.5, 0.5)
 	base.Size = Settings.Size or UDim2.fromOffset(868, 650)
 
@@ -787,6 +788,7 @@ function AstralLib:Window(Settings)
 	end)
 
 	local dragging_ = false
+	local resizingWindow = false
 	local dragInput
 	local dragStart
 	local startPos
@@ -797,6 +799,7 @@ function AstralLib:Window(Settings)
 	end
 
 	local function onDragStart(input)
+		if resizingWindow then return end
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			dragging_ = true
 			dragStart = input.Position
@@ -854,6 +857,58 @@ function AstralLib:Window(Settings)
 		base.InputEnded:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 				dragging_ = false
+			end
+		end)
+	end
+
+	if Settings.Resizable then
+		local resizeHandle = Instance.new("TextButton")
+		resizeHandle.Name = "ResizeHandle"
+		resizeHandle.Text = "◢"
+		resizeHandle.TextColor3 = Color3.fromRGB(180, 180, 180)
+		resizeHandle.TextSize = 16
+		resizeHandle.AutoButtonColor = false
+		resizeHandle.AnchorPoint = Vector2.new(1, 1)
+		resizeHandle.BackgroundTransparency = 1
+		resizeHandle.Position = UDim2.new(1, -5, 1, -5)
+		resizeHandle.Size = UDim2.fromOffset(22, 22)
+		resizeHandle.ZIndex = 100
+		resizeHandle.Parent = base
+
+		local resizeStart
+		local resizeStartSize
+		local resizeStartPosition
+
+		resizeHandle.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				resizingWindow = true
+				dragging_ = false
+				resizeStart = input.UserInputType == Enum.UserInputType.Touch and input.Position or UserInputService:GetMouseLocation()
+				resizeStartSize = base.AbsoluteSize
+				resizeStartPosition = base.Position
+			end
+		end)
+
+		UserInputService.InputChanged:Connect(function(input)
+			if not resizingWindow or (input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch) then return end
+
+			local pointer = input.UserInputType == Enum.UserInputType.Touch and input.Position or UserInputService:GetMouseLocation()
+			local delta = pointer - resizeStart
+			local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
+			local width = math.clamp(resizeStartSize.X + delta.X, 600, math.max(600, viewport.X - 20))
+			local height = math.clamp(resizeStartSize.Y + delta.Y, 400, math.max(400, viewport.Y - 20))
+			local sidebarWidth = math.clamp(sidebar.AbsoluteSize.X, minSidebarWidth, width - minSidebarWidth)
+
+			base.Size = UDim2.fromOffset(width, height)
+			base.Position = UDim2.new(resizeStartPosition.X.Scale, resizeStartPosition.X.Offset + (width - resizeStartSize.X) / 2, resizeStartPosition.Y.Scale, resizeStartPosition.Y.Offset + (height - resizeStartSize.Y) / 2)
+			sidebar.Size = UDim2.new(0, sidebarWidth, 1, 0)
+			content.Size = UDim2.new(0, width - sidebarWidth, 1, 0)
+			maxSidebarWidth = width - minSidebarWidth
+		end)
+
+		UserInputService.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				resizingWindow = false
 			end
 		end)
 	end

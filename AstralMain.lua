@@ -6,25 +6,43 @@ local CharacterInfo = require(ReplicatedStorage:WaitForChild("Modules"):WaitForC
 
 local AstralLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/aechlaenm/AstralHub/refs/heads/main/Libraries/AstralLib.lua"))()
 
+local function colored(text, rarity)
+	local color = CharacterInfo.Colors[rarity]
+	if not color then return text end
+	return string.format('<font color="#%02X%02X%02X">%s</font>', math.round(color.R * 255), math.round(color.G * 255), math.round(color.B * 255), text)
+end
+
 local CharacterRarities = {}
-local CharacterOptions = { "None" }
+local CharacterNames = {}
 for _, character in ipairs(CharacterInfo.Characters) do
 	local chance = tonumber(character.Chance) or 0
 	if chance > 0 and chance ~= 69 then
 		CharacterRarities[character.Name] = character.Rarity
-		table.insert(CharacterOptions, character.Name)
+		table.insert(CharacterNames, character.Name)
 	end
 end
-table.sort(CharacterOptions, function(a, b)
-	if a == "None" then return b ~= "None" end
-	if b == "None" then return false end
-	return a < b
-end)
+table.sort(CharacterNames)
+
+local CharacterOptions = { "None" }
+local CharacterValues = {}
+for _, name in ipairs(CharacterNames) do
+	local display = colored(name, CharacterRarities[name])
+	CharacterValues[display] = name
+	table.insert(CharacterOptions, display)
+end
+
+local RarityOptions = { "None" }
+local RarityValues = {}
+for _, rarity in ipairs({ "Common", "Rare", "Epic", "Legendary", "Mythic", "Secret", "God", "Limited" }) do
+	local display = colored(rarity, rarity)
+	RarityValues[display] = rarity
+	table.insert(RarityOptions, display)
+end
 
 local Window = AstralLib:Window({
 	Title = "Astral",
 	Subtitle = "Anime RNG TD",
-	Size = UDim2.fromOffset(700, 500),
+	Size = UDim2.fromOffset(850, 520),
 	Keybind = Enum.KeyCode.RightControl,
 	AcrylicBlur = true,
 	ShowUserInfo = true,
@@ -32,6 +50,7 @@ local Window = AstralLib:Window({
 
 local AutoTab = Window:TabGroup():Tab({ Name = "Auto" })
 local AutoSection = AutoTab:Section({ Side = "Left" })
+local TargetSection = AutoTab:Section({ Side = "Right" })
 
 AutoSection:Header({ Text = "Roll" })
 local StatusLabel = AutoSection:Label({ Text = "Plot: searching..." })
@@ -46,6 +65,8 @@ local unloaded = false
 local targetRarity
 local targetCharacter
 local AutoRollToggle
+local AUTO_ROLL_OFF = '<font color="#FF5555">Auto Roll • OFF</font>'
+local AUTO_ROLL_ON = '<font color="#55FF88">Auto Roll • ON</font>'
 
 local function getPlayerPlot()
 	for _, plot in ipairs(Plots:GetChildren()) do
@@ -104,6 +125,7 @@ local function setAutoRoll(enabled)
 	end
 
 	autoRoll = enabled
+	AutoRollToggle:UpdateName(enabled and AUTO_ROLL_ON or AUTO_ROLL_OFF)
 	if autoRollRunning or not enabled then return end
 
 	autoRollRunning = true
@@ -118,19 +140,20 @@ local function setAutoRoll(enabled)
 	end)
 end
 
-AutoSection:Dropdown({
+TargetSection:Header({ Text = "Roll Targets" })
+TargetSection:Dropdown({
 	Name = "Target Rarity",
 	Search = false,
 	Multi = false,
 	Required = true,
-	Options = { "None", "Common", "Rare", "Epic", "Legendary", "Mythic", "Secret", "God", "Limited" },
+	Options = RarityOptions,
 	Default = 1,
 	Callback = function(value)
-		targetRarity = value ~= "None" and value or nil
+		targetRarity = RarityValues[value]
 	end,
 }, "TargetRarity")
 
-AutoSection:Dropdown({
+TargetSection:Dropdown({
 	Name = "Target Character",
 	Search = true,
 	Multi = false,
@@ -138,12 +161,12 @@ AutoSection:Dropdown({
 	Options = CharacterOptions,
 	Default = 1,
 	Callback = function(value)
-		targetCharacter = value ~= "None" and value or nil
+		targetCharacter = CharacterValues[value]
 	end,
 }, "TargetCharacter")
 
 AutoRollToggle = AutoSection:Toggle({
-	Name = "Auto Roll",
+	Name = AUTO_ROLL_OFF,
 	Default = false,
 	Callback = setAutoRoll,
 }, "AutoRoll")

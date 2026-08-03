@@ -4,7 +4,7 @@ local LocalPlayer = Players.LocalPlayer
 local Plots = workspace:WaitForChild("Plots")
 local CharacterInfo = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Characters"):WaitForChild("CharactersInfo"))
 
-local AstralLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/aechlaenm/AstralHub/43d57231429b291b21228f92c09f36f8e44e3ae3/Libraries/AstralLib.lua"))()
+local AstralLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/aechlaenm/AstralHub/43d5723/Libraries/AstralLib.lua"))()
 
 local function colored(text, rarity)
 	local color = CharacterInfo.Colors[rarity]

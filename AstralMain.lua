@@ -4,7 +4,7 @@ local LocalPlayer = Players.LocalPlayer
 local Plots = workspace:WaitForChild("Plots")
 local CharacterInfo = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Characters"):WaitForChild("CharactersInfo"))
 
-local AstralLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/aechlaenm/AstralHub/43d5723/Libraries/AstralLib.lua"))()
+local AstralLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/aechlaenm/AstralHub/316666a/Libraries/AstralLib.lua"))()
 
 local function colored(text, rarity)
 	local color = CharacterInfo.Colors[rarity]
@@ -45,8 +45,10 @@ local Window = AstralLib:Window({
 	Title = "Astral",
 	Subtitle = "Anime RNG TD",
 	Size = UDim2.fromOffset(850, 520),
+	DragStyle = 2,
+	Resizable = true,
 	Keybind = Enum.KeyCode.RightControl,
-	AcrylicBlur = true,
+	AcrylicBlur = false,
 	ShowUserInfo = true,
 })
 
@@ -62,7 +64,7 @@ local Characters
 local RollPrompt
 local resultConnection
 local autoRoll = false
-local autoRollRunning = false
+local rollGeneration = 0
 local unloaded = false
 local targetRarity
 local targetCharacter
@@ -100,6 +102,7 @@ local function resolvePlayerPlot()
 
 			if autoRoll and ((targetRarity and targetRarity == rarity) or (targetCharacter and targetCharacter == character.Name)) then
 				autoRoll = false
+				rollGeneration += 1
 				task.defer(function() AutoRollToggle:UpdateState(false) end)
 				Window:Notify({
 					Title = "Astral",
@@ -125,17 +128,17 @@ local function setAutoRoll(enabled)
 	end
 
 	autoRoll = enabled
-	if autoRollRunning or not enabled then return end
+	rollGeneration += 1
+	if not enabled then return end
 
-	autoRollRunning = true
+	local generation = rollGeneration
 	task.spawn(function()
-		while autoRoll and not unloaded do
-			if resolvePlayerPlot() and RollPrompt.Enabled then
+		while autoRoll and generation == rollGeneration and not unloaded do
+			if generation == rollGeneration and resolvePlayerPlot() and RollPrompt.Enabled then
 				fireproximityprompt(RollPrompt)
 			end
 			task.wait(1)
 		end
-		autoRollRunning = false
 	end)
 end
 
@@ -183,6 +186,7 @@ end)
 Window.onUnloaded(function()
 	unloaded = true
 	autoRoll = false
+	rollGeneration += 1
 	if resultConnection then resultConnection:Disconnect() end
 end)
 
